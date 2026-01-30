@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ─── Configuration (set in agent environment) ───
+: "${RUNSKILLS_API_URL:?Set RUNSKILLS_API_URL (e.g. https://run-skills.fly.dev)}"
+: "${RUNSKILLS_TOKEN:?Set RUNSKILLS_TOKEN (bearer token)}"
+: "${RUNSKILLS_USER_ID:?Set RUNSKILLS_USER_ID}"
+
+# ─── Argument parsing ───
+if [ $# -lt 1 ]; then
+  echo "Usage: runskills <command> [args...]" >&2
+  exit 1
+fi
+
+COMMAND="$1"
+shift
+ARGS_JSON=$(printf '%s\n' "$@" | jq -R . | jq -s .)
+
+# ─── Phase 1: Start the skill ───
+START_RESPONSE=$(curl -sf \
+  -X POST \
+  -H "Authorization: Bearer ${RUNSKILLS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "$(jq -n \
+    --arg cmd "$COMMAND" \
+    --argjson args "$ARGS_JSON" \
+    --arg uid "$RUNSKILLS_USER_ID" \
+    '{command: $cmd, args: $args, userId: $uid}')" \
+  "${RUNSKILLS_API_URL}/api/start") || {
+    echo "Error: Failed to start skill '${COMMAND}'" >&2
+    exit 1
+  }
+
+STREAM_ID=$(echo "$START_RESPONSE" | jq -r '.streamId')
+STATUS=$(echo "$START_RESPONSE" | jq -r '.status')
+
+if [ "$STATUS" != "starting" ]; then
+  echo "Error: Unexpected status: $STATUS" >&2
+  echo "$START_RESPONSE" | jq . >&2
+  exit 1
+fi
+
+# ─── Phase 2: Stream output via SSE ───
+EXIT_CODE=0
+EVENT_TYPE=""
+
+curl -sfN \
+  -H "Authorization: Bearer ${RUNSKILLS_TOKEN}" \
+  "${RUNSKILLS_API_URL}/api/stream/${STREAM_ID}" | \
+while IFS= read -r line; do
+  # SSE format: "event: <type>" then "data: <json>" then empty line
+  if [[ "$line" == event:* ]]; then
+    EVENT_TYPE="${line#event: }"
+    continue
+  fi
+
+  if [[ "$line" == data:* ]]; then
+    DATA="${line#data: }"
+
+    case "$EVENT_TYPE" in
+      stdout)
+        echo "$DATA" | jq -r '.data'
+        ;;
+      stderr)
+        echo "$DATA" | jq -r '.data' >&2
+        ;;
+      done)
+        EXIT_CODE=$(echo "$DATA" | jq -r '.exitCode')
+        break
+        ;;
+      error)
+        echo "ERROR: $(echo "$DATA" | jq -r '.message')" >&2
+        EXIT_CODE=1
+        break
+        ;;
+    esac
+  fi
+done
+
+exit "${EXIT_CODE}"
