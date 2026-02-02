@@ -1,0 +1,35 @@
+version: '3.8'
+
+# Build configuration for podman-compose
+# IMPORTANT: Builds for linux/amd64 platform (for cloud deployment)
+# Usage:
+#   export TAG=$(date +%Y%m%d-%H%M%S)
+#   podman-compose -f docker-compose.build.yml build
+
+services:
+  ascii-image-converter:
+    build:
+      context: ./container/ascii-image-converter
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+    image: 471112576951.dkr.ecr.ap-northeast-1.amazonaws.com/weightwave/skill:ascii-image-converter-${TAG:-latest}
+    platform: linux/amd64
+
+  ffmpeg:
+    build:
+      context: ./container/ffmpeg
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+    image: 471112576951.dkr.ecr.ap-northeast-1.amazonaws.com/weightwave/skill:ffmpeg-${TAG:-latest}
+    platform: linux/amd64
+
+  imagemagick:
+    build:
+      context: ./container/imagemagick
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+    image: 471112576951.dkr.ecr.ap-northeast-1.amazonaws.com/weightwave/skill:imagemagick-${TAG:-latest}
+    platform: linux/amd64

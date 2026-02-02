@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  ascii-image-converter:
+    build:
+      context: ./container/ascii-image-converter
+      dockerfile: Dockerfile
+    image: 471112576951.dkr.ecr.ap-northeast-1.amazonaws.com/weightwave/skill:ascii-image-converter-latest
+    environment:
+      - CALLBACK_URL=${CALLBACK_URL}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+      - COMMAND=/usr/local/bin/ascii-image-converter
+      - ARGS=${ARGS:-}
+      - USER_ID=${USER_ID:-test}
+    volumes:
+      - ./vol:/vol
+
+  ffmpeg:
+    build:
+      context: ./container/ffmpeg
+      dockerfile: Dockerfile
+    image: 471112576951.dkr.ecr.ap-northeast-1.amazonaws.com/weightwave/skill:ffmpeg-latest
+    environment:
+      - CALLBACK_URL=${CALLBACK_URL}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+      - COMMAND=/usr/bin/ffmpeg
+      - ARGS=${ARGS:-}
+      - USER_ID=${USER_ID:-test}
+    volumes:
+      - ./vol:/vol
+
+  imagemagick:
+    build:
+      context: ./container/imagemagick
+      dockerfile: Dockerfile
+    image: 471112576951.dkr.ecr.ap-northeast-1.amazonaws.com/weightwave/skill:imagemagick-latest
+    environment:
+      - CALLBACK_URL=${CALLBACK_URL}
+      - INTERNAL_SECRET=${INTERNAL_SECRET}
+      - COMMAND=/usr/bin/convert
+      - ARGS=${ARGS:-}
+      - USER_ID=${USER_ID:-test}
+    volumes:
+      - ./vol:/vol

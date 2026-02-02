@@ -1,8 +1,10 @@
 import type { SkillConfig } from '../types.js';
 
+const regUrl = '471112576951.dkr.ecr.ap-northeast-1.amazonaws.com/weightwave/skill:'
+
 const SKILLS: Record<string, SkillConfig> = {
   'ascii-image-converter': {
-    image: 'registry.fly.io/run-skills-ascii-image-converter:latest',
+    image: regUrl + 'ascii-image-converter-latest',
     description: 'Convert images to ASCII art',
     timeout_seconds: 120,
     cpu_kind: 'shared',
@@ -10,7 +12,7 @@ const SKILLS: Record<string, SkillConfig> = {
     memory_mb: 256,
   },
   ffmpeg: {
-    image: 'registry.fly.io/run-skills-ffmpeg:latest',
+    image: regUrl + 'ffmpeg-latest',
     description: 'FFmpeg media processing',
     timeout_seconds: 600,
     cpu_kind: 'shared',
@@ -18,7 +20,7 @@ const SKILLS: Record<string, SkillConfig> = {
     memory_mb: 512,
   },
   imagemagick: {
-    image: 'registry.fly.io/run-skills-imagemagick:latest',
+    image: regUrl + 'imagemagick-latest',
     description: 'ImageMagick image processing',
     timeout_seconds: 300,
     cpu_kind: 'shared',

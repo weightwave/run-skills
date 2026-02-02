@@ -26,3 +26,14 @@ lerna-debug.log*
 
 # misc
 .DS_Store
+
+# build
+dist/
+
+# volumes and test data
+vol/
+volumes/
+
+# temp files
+*.tmp
+*.temp

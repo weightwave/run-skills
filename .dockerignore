@@ -26,3 +26,43 @@ lerna-debug.log*
 
 # misc
 .DS_Store
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+npm-debug.log
+pnpm-lock.yaml
+
+# Build
+dist
+*.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+.claude
+
+# Environment
+.env
+.env.local
+
+# Documentation
+*.md
+!container/*/README.md
+
+# Docker
+docker-compose*.yml
+!docker-compose.build.yml
+Dockerfile*
+!*/Dockerfile
+
+# Scripts (not needed in containers)
+scripts
+
+# Temp
+vol
+*.tmp
