@@ -1,49 +1,32 @@
 # syntax = docker/dockerfile:1
 
-# Adjust NODE_VERSION as desired
-ARG NODE_VERSION=22.21.1
-FROM node:${NODE_VERSION}-slim AS base
+FROM node:22-alpine AS base
 
-LABEL fly_launch_runtime="Node.js"
+FROM base AS builder
 
-# Node.js app lives here
+RUN apk add --no-cache gcompat
 WORKDIR /app
 
-# Set production environment
-ENV NODE_ENV="production"
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Install pnpm
-ARG PNPM_VERSION=latest
-RUN npm install -g pnpm@$PNPM_VERSION
+COPY package.json pnpm-lock.yaml tsconfig.json ./
+COPY src ./src
 
+RUN pnpm install --frozen-lockfile && \
+    pnpm run build && \
+    pnpm prune --prod
 
-# Throw-away build stage to reduce size of final image
-FROM base AS build
+FROM base AS runner
+WORKDIR /app
 
-# Install packages needed to build node modules
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 hono
 
-# Install node modules
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod=false
+COPY --from=builder --chown=hono:nodejs /app/node_modules /app/node_modules
+COPY --from=builder --chown=hono:nodejs /app/dist /app/dist
+COPY --from=builder --chown=hono:nodejs /app/package.json /app/package.json
 
-# Copy application code
-COPY . .
-
-# Build application
-RUN pnpm run build
-
-# Remove development dependencies
-RUN pnpm prune --prod
-
-
-# Final stage for app image
-FROM base
-
-# Copy built application
-COPY --from=build /app /app
-
-# Start the server by default, this can be overwritten at runtime
+USER hono
 EXPOSE 3000
-CMD [ "pnpm", "run", "start" ]
+
+CMD ["node", "/app/dist/index.js"]
