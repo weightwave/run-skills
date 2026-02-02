@@ -33,7 +33,7 @@ lerna-debug.log*
 # Node
 node_modules
 npm-debug.log
-pnpm-lock.yaml
+pnpm-debug.log
 
 # Build
 dist
